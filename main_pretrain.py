@@ -205,7 +205,7 @@ if __name__ == "__main__":
             batch['x'], batch['mask'], pretrain_mask = random_masking(batch['x'], batch['mask'], args.min_mask_ratio, args.max_mask_ratio)
             z = encoder(**batch)
             z = predictor(z)
-            loss = criterion(z[:, :, 1:], h[:, :, 1:], pretrain_mask.permute(0, 2, 1).unsqueeze(-1).expand_as(z[:, :, 1:]))
+            loss = criterion(z[:, :, 1:], h[:, :, 1:], pretrain_mask.permute(0, 2, 1).unsqueeze(-1).expand_as(z[:, :, 1:])) # 让mask后的表征和target相近。
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -225,7 +225,7 @@ if __name__ == "__main__":
                 with torch.no_grad():
                     h = target_encoder(**batch)
                 batch['labels'] = batch['x']
-                batch['x'], batch['mask'], pretrain_mask = random_masking(batch['x'], batch['mask'], args.min_mask_ratio, args.max_mask_ratio)
+                batch['x'], batch['mask'], pretrain_mask = random_masking(batch['x'], batch['mask'], args.min_mask_ratio, args.max_mask_ratio) # 让mask和他相近。
                 z = encoder(**batch)
                 z = predictor(z)
                 val_loss += criterion(z[:, :, 1:], h[:, :, 1:], pretrain_mask.permute(0, 2, 1).unsqueeze(-1).expand_as(z[:, :, 1:])).item() * batch['x'].shape[0]
