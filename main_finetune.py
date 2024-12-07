@@ -174,12 +174,12 @@ if __name__ == "__main__":
         for step, batch in enumerate(train_dataloader, 1):
             for key in batch:
                 batch[key] = batch[key].cuda()
-            if i <= args.freeze_epochs:
+            if i <= args.freeze_epochs:# 这太扯了，居然还用这种操作。这明显调整的太多了吧
                 with torch.no_grad():
                     h = encoder(**batch)
             else:
                 h = encoder(**batch)
-            preds = classifier(h, **batch)
+            preds = classifier(h, **batch) # 然后结合这个classifier出结果。
             loss = criterion(preds, batch['labels'])
             optimizer.zero_grad()
             loss.backward()
