@@ -38,13 +38,13 @@ def process_partition(args, partition, sample_rate=1.0, shortest_length=4.0,
                     continue
 
                 stay = stays_df[stays_df.ICUSTAY_ID == label_df.iloc[0]['Icustay']]
-                deathtime = pd.to_datetime(stay['DEATHTIME'].iloc[0])
-                intime = pd.to_datetime(stay['INTIME'].iloc[0])
+                deathtime = pd.to_datetime(stay['DEATHTIME'].iloc[0]) # 记录死亡时间
+                intime = pd.to_datetime(stay['INTIME'].iloc[0]) # 记录入院时间
                 if pd.isnull(deathtime):
-                    lived_time = 1e18
+                    lived_time = 1e18 # 如果为空，则没死，用个超级大的数
                 else:
                     # conversion to pydatetime is needed to avoid overflow issues when subtracting
-                    lived_time = (deathtime.to_pydatetime() - intime.to_pydatetime()).total_seconds() / 3600.0
+                    lived_time = (deathtime.to_pydatetime() - intime.to_pydatetime()).total_seconds() / 3600.0 # 不然记录下还有多久死。就是live time
 
                 ts_lines = tsfile.readlines()
                 header = ts_lines[0]
@@ -68,8 +68,8 @@ def process_partition(args, partition, sample_rate=1.0, shortest_length=4.0,
                 # # At least one measurement
                 # sample_times = list(filter(lambda x: x > event_times[0], sample_times))
                 
-                t = min(24, int(los), int(lived_time))
-                if len(event_times) < 2 or event_times[1] > t:
+                t = min(24, int(los), int(lived_time)) # 这里看下最小值。
+                if len(event_times) < 2 or event_times[1] > t: # 只有一次event，并且第二次时间就比live时间长，就过滤掉这个数据。
                     print("(no enough data) ", patient, ts_filename)
                     continue
 
@@ -79,10 +79,10 @@ def process_partition(args, partition, sample_rate=1.0, shortest_length=4.0,
                     for line in ts_lines:
                         outfile.write(line)
                         
-                if mortality == 0:
-                    cur_mortality = 0
+                if mortality == 0: # 应该是记录没死。
+                    cur_mortality = 0 
                 else:
-                    cur_mortality = int(lived_time - t < future_time_interval)
+                    cur_mortality = int(lived_time - t < future_time_interval)# 没死就计算下，如果lived_time - t间隔不足24h，就算死；反之就算0。
                 xty_triples.append((output_ts_filename, t, cur_mortality))
 
     print("Number of created samples:", len(xty_triples))
